@@ -1,51 +1,46 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+import { ActivityRail, type ActivityKey } from "./components/layout/ActivityRail";
+import { SidePane } from "./components/layout/SidePane";
+import { Workbench } from "./components/layout/Workbench";
+import { AboutPanel } from "./features/about/AboutPanel";
+import { HistoryPanel } from "./features/history/HistoryPanel";
+import { RequestPanel } from "./features/request/RequestPanel";
+import { ResponsePanel } from "./features/response/ResponsePanel";
+import { TabStrip } from "./features/tabs/TabStrip";
+import { useTabsStore } from "./store/tabsStore";
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+export default function App() {
+  const tabs = useTabsStore((s) => s.tabs);
+  const activeId = useTabsStore((s) => s.activeId);
+  const activeTab = tabs.find((t) => t.id === activeId) ?? tabs[0];
+
+  // The activity rail toggles which side pane is shown — null means the
+  // pane is collapsed entirely so the workbench gets the full width.
+  const [activity, setActivity] = useState<ActivityKey | null>("history");
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <div className="flex h-screen w-screen overflow-hidden bg-stone-950 text-stone-100">
+      <ActivityRail active={activity} onSelect={setActivity} />
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+      {activity && (
+        <SidePane>
+          {activity === "history" && <HistoryPanel />}
+          {activity === "about" && <AboutPanel />}
+        </SidePane>
+      )}
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      <main className="flex min-w-0 flex-1 flex-col">
+        <TabStrip />
+        <div className="min-h-0 flex-1">
+          {activeTab && (
+            <Workbench
+              request={<RequestPanel tab={activeTab} />}
+              response={<ResponsePanel tab={activeTab} />}
+            />
+          )}
+        </div>
+      </main>
+    </div>
   );
 }
-
-export default App;

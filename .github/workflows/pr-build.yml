@@ -1,0 +1,74 @@
+name: PR Build Check
+
+# Run when a pull request targeting `main` is opened, updated or reopened.
+# We only care about PRs that come from a `dev/*` branch — drafts from
+# elsewhere can opt in by changing the source branch name.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# A new push to the same PR cancels the previous build to save CI minutes.
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform.name }})
+    if: startsWith(github.head_ref, 'dev/') || startsWith(github.head_ref, 'dev-')
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { os: windows-latest, name: windows }
+          - { os: ubuntu-latest, name: linux }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry & target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      # Tauri on Linux needs system libraries to build the webview wrapper.
+      # On Windows everything is provided by the runner image.
+      - name: Install Linux build dependencies
+        if: matrix.platform.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            build-essential \
+            curl \
+            wget \
+            file
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Type-check & build frontend
+        run: npm run build
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        with:
+          # We don't ship release artifacts from PR builds — this is a
+          # smoke test that the bundler can produce a binary at all.
+          args: --ci
