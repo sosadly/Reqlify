@@ -74,5 +74,5 @@ jobs:
             |----------|------|
             | Windows  | `.msi` or `.exe` installer |
             | Linux    | `.AppImage` or `.deb` package |
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
