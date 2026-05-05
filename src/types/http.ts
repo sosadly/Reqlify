@@ -16,6 +16,15 @@ export interface KeyValueEntry {
 
 export type BodyMode = "none" | "json" | "text";
 
+export type AuthMode = "none" | "bearer" | "basic";
+
+export interface AuthConfig {
+  mode: AuthMode;
+  bearerToken: string;
+  basicUser: string;
+  basicPassword: string;
+}
+
 export interface RequestDraft {
   method: HttpMethod;
   url: string;
@@ -23,6 +32,7 @@ export interface RequestDraft {
   headers: KeyValueEntry[];
   bodyMode: BodyMode;
   body: string;
+  auth: AuthConfig;
 }
 
 export interface HttpResponse {

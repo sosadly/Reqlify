@@ -5,7 +5,7 @@ import { loadJson, saveJson } from "../lib/storage";
 import type { RequestDraft } from "../types/http";
 import type { RequestStatus, RequestTab } from "../types/tabs";
 import { createId } from "../utils/id";
-import { emptyDraft, tabTitleFromUrl } from "../utils/request";
+import { emptyAuth, emptyDraft, tabTitleFromUrl } from "../utils/request";
 
 interface PersistedTabs {
   tabs: Array<Pick<RequestTab, "id" | "title" | "draft">>;
@@ -44,7 +44,9 @@ function hydrate(): { tabs: RequestTab[]; activeId: string | null } {
   const tabs: RequestTab[] = persisted.tabs.map((t) => ({
     id: t.id,
     title: t.title,
-    draft: t.draft,
+    // Merge with emptyDraft so any fields added in newer versions (e.g. auth)
+    // always exist even when loading old persisted data.
+    draft: { ...emptyDraft(t.draft?.method), ...t.draft, auth: t.draft?.auth ?? emptyAuth() },
     status: "idle",
     response: null,
     error: null,
