@@ -1,6 +1,6 @@
 [package]
 name = "reqlify"
-version = "0.1.0"
+version = "0.2.0"
 description = "A free, offline-first HTTP client"
 authors = ["sosadly"]
 edition = "2021"
