@@ -1,4 +1,4 @@
-import type { HttpMethod, KeyValueEntry, RequestDraft } from "../types/http";
+import type { AuthConfig, HttpMethod, KeyValueEntry, RequestDraft } from "../types/http";
 import { createId } from "./id";
 
 export function makeKvEntry(partial: Partial<KeyValueEntry> = {}): KeyValueEntry {
@@ -11,6 +11,10 @@ export function makeKvEntry(partial: Partial<KeyValueEntry> = {}): KeyValueEntry
   };
 }
 
+export function emptyAuth(): AuthConfig {
+  return { mode: "none", bearerToken: "", basicUser: "", basicPassword: "" };
+}
+
 export function emptyDraft(method: HttpMethod = "GET"): RequestDraft {
   return {
     method,
@@ -19,6 +23,7 @@ export function emptyDraft(method: HttpMethod = "GET"): RequestDraft {
     headers: [makeKvEntry()],
     bodyMode: "none",
     body: "",
+    auth: emptyAuth(),
   };
 }
 
@@ -29,10 +34,6 @@ export function activePairs(entries: KeyValueEntry[]): Array<[string, string]> {
     .map((e) => [e.key, e.value]);
 }
 
-/**
- * Derive a short, recognizable tab title from a URL — host + path tail —
- * so the tab strip doesn't fill up with full URLs.
- */
 export function tabTitleFromUrl(url: string, fallback = "New Request"): string {
   const trimmed = url.trim();
   if (!trimmed) return fallback;

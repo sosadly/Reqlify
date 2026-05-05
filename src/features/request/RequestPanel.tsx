@@ -1,12 +1,17 @@
-import { Braces, FileCode2, ListFilter } from "lucide-react";
+import { Braces, Check, Copy, FileCode2, ListFilter, Lock, Terminal } from "lucide-react";
+import { useState } from "react";
 
 import { Section } from "../../components/ui/Section";
+import { exportAsCurl } from "../../lib/curlExporter";
 import { useTabsStore } from "../../store/tabsStore";
+import type { RequestDraft } from "../../types/http";
 import type { RequestTab } from "../../types/tabs";
-import { useSendRequest } from "./useSendRequest";
+import { AuthEditor } from "./AuthEditor";
 import { BodyEditor } from "./BodyEditor";
+import { CurlImportModal } from "./CurlImportModal";
 import { KeyValueEditor } from "./KeyValueEditor";
 import { UrlBar } from "./UrlBar";
+import { useSendRequest } from "./useSendRequest";
 
 interface RequestPanelProps {
   tab: RequestTab;
@@ -22,11 +27,59 @@ export function RequestPanel({ tab }: RequestPanelProps) {
   const send = useSendRequest();
   const { draft } = tab;
 
+  const [showImport, setShowImport] = useState(false);
+  const [curlCopied, setCurlCopied] = useState(false);
+
   const paramCount = activeCount(draft.params);
   const headerCount = activeCount(draft.headers);
+  const hasAuth = draft.auth.mode !== "none";
+
+  const copyAsCurl = async () => {
+    try {
+      await navigator.clipboard.writeText(exportAsCurl(draft));
+      setCurlCopied(true);
+      setTimeout(() => setCurlCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  const handleImport = (patch: Partial<RequestDraft>) => {
+    updateDraft(tab.id, patch);
+  };
 
   return (
     <div className="flex flex-col gap-4 p-4">
+      {/* cURL toolbar */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setShowImport(true)}
+          className="inline-flex items-center gap-1.5 rounded-md border border-stone-800 bg-stone-900/40 px-2.5 py-1.5 text-xs text-stone-400 transition-colors hover:border-stone-700 hover:text-stone-200"
+        >
+          <Terminal size={13} />
+          Import cURL
+        </button>
+        <button
+          type="button"
+          onClick={copyAsCurl}
+          disabled={draft.url.trim() === ""}
+          className="inline-flex items-center gap-1.5 rounded-md border border-stone-800 bg-stone-900/40 px-2.5 py-1.5 text-xs text-stone-400 transition-colors hover:border-stone-700 hover:text-stone-200 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {curlCopied ? (
+            <>
+              <Check size={13} className="text-emerald-400" />
+              <span className="text-emerald-300">Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy size={13} />
+              Copy as cURL
+            </>
+          )}
+        </button>
+      </div>
+
       <UrlBar
         method={draft.method}
         url={draft.url}
@@ -37,6 +90,25 @@ export function RequestPanel({ tab }: RequestPanelProps) {
       />
 
       <div className="flex flex-col gap-3">
+        <Section
+          title="Auth"
+          icon={<Lock size={13} />}
+          accentClass="bg-fuchsia-500/70"
+          defaultOpen={hasAuth}
+          meta={
+            hasAuth && (
+              <span className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-300">
+                {draft.auth.mode === "bearer" ? "Bearer" : "Basic"}
+              </span>
+            )
+          }
+        >
+          <AuthEditor
+            auth={draft.auth}
+            onChange={(auth) => updateDraft(tab.id, { auth })}
+          />
+        </Section>
+
         <Section
           title="Query Params"
           icon={<ListFilter size={13} />}
@@ -67,6 +139,7 @@ export function RequestPanel({ tab }: RequestPanelProps) {
           title="Body"
           icon={<Braces size={13} />}
           accentClass="bg-amber-400/70"
+          defaultOpen={draft.bodyMode !== "none"}
           meta={
             draft.bodyMode !== "none" && (
               <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
@@ -74,7 +147,6 @@ export function RequestPanel({ tab }: RequestPanelProps) {
               </span>
             )
           }
-          defaultOpen={draft.bodyMode !== "none"}
         >
           <BodyEditor
             mode={draft.bodyMode}
@@ -84,6 +156,13 @@ export function RequestPanel({ tab }: RequestPanelProps) {
           />
         </Section>
       </div>
+
+      {showImport && (
+        <CurlImportModal
+          onImport={handleImport}
+          onClose={() => setShowImport(false)}
+        />
+      )}
     </div>
   );
 }
