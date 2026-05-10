@@ -4,6 +4,8 @@ import { ActivityRail, type ActivityKey } from "./components/layout/ActivityRail
 import { SidePane } from "./components/layout/SidePane";
 import { Workbench } from "./components/layout/Workbench";
 import { AboutPanel } from "./features/about/AboutPanel";
+import { CollectionsPanel } from "./features/collections/CollectionsPanel";
+import { EnvPanel } from "./features/env/EnvPanel";
 import { HistoryPanel } from "./features/history/HistoryPanel";
 import { RequestPanel } from "./features/request/RequestPanel";
 import { ResponsePanel } from "./features/response/ResponsePanel";
@@ -26,6 +28,8 @@ export default function App() {
       {activity && (
         <SidePane>
           {activity === "history" && <HistoryPanel />}
+          {activity === "collections" && <CollectionsPanel />}
+          {activity === "env" && <EnvPanel />}
           {activity === "about" && <AboutPanel />}
         </SidePane>
       )}

@@ -35,7 +35,7 @@ export function MethodPicker({ value, onChange }: MethodPickerProps) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex h-11 min-w-[110px] items-center justify-between gap-2 rounded-l-lg border px-3 text-sm font-mono font-bold transition-colors ${theme.chip}`}
+        className={`flex h-11 min-w-27.5 items-center justify-between gap-2 rounded-l-lg border px-3 text-sm font-mono font-bold transition-colors ${theme.chip}`}
       >
         <span>{value}</span>
         <ChevronDown size={14} className="opacity-60" />

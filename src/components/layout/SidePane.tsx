@@ -10,7 +10,7 @@ interface SidePaneProps {
  */
 export function SidePane({ children }: SidePaneProps) {
   return (
-    <div className="flex h-full w-64 flex-col border-r border-stone-800/80 bg-stone-950/60">
+    <div className="flex h-full w-72 flex-col border-r border-stone-800/80 bg-stone-950">
       {children}
     </div>
   );

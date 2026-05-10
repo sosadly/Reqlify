@@ -5,6 +5,8 @@
 export const STORAGE_KEYS = {
   tabs: "reqlify:tabs:v1",
   history: "reqlify:history:v1",
+  env: "reqlify:env:v1",
+  collections: "reqlify:collections:v1",
 } as const;
 
 /** Cap history so localStorage doesn't grow unbounded. */

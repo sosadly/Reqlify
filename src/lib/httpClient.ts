@@ -1,7 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
 
+import { useEnvStore } from "../store/envStore";
 import type { AuthConfig, HttpResponse, RequestDraft } from "../types/http";
 import { activePairs } from "../utils/request";
+
+function applyEnvVars(text: string, vars: Record<string, string>): string {
+  if (Object.keys(vars).length === 0) return text;
+  return text.replace(/\{\{([^}]+)\}\}/g, (_, key: string) => vars[key.trim()] ?? `{{${key}}}`);
+}
+
+function applyEnvToEntries(
+  entries: Array<[string, string]>,
+  vars: Record<string, string>,
+): Array<[string, string]> {
+  return entries.map(([k, v]) => [applyEnvVars(k, vars), applyEnvVars(v, vars)]);
+}
 
 interface RustHttpResponse {
   status: number;
@@ -33,8 +46,16 @@ function resolveAuthHeader(auth: AuthConfig): [string, string] | null {
  * what the user typed, never the injected Authorization value.
  */
 export async function sendRequest(draft: RequestDraft): Promise<HttpResponse> {
+  const vars = useEnvStore.getState().activeVars();
+
   const userHeaders = activePairs(draft.headers);
-  const authHeader = resolveAuthHeader(draft.auth);
+  const resolvedAuth: AuthConfig = {
+    ...draft.auth,
+    bearerToken: applyEnvVars(draft.auth.bearerToken, vars),
+    basicUser: applyEnvVars(draft.auth.basicUser, vars),
+    basicPassword: applyEnvVars(draft.auth.basicPassword, vars),
+  };
+  const authHeader = resolveAuthHeader(resolvedAuth);
 
   // Auth header wins over a manually set Authorization if both exist.
   const headers: Array<[string, string]> = authHeader
@@ -44,10 +65,10 @@ export async function sendRequest(draft: RequestDraft): Promise<HttpResponse> {
   const raw = await invoke<RustHttpResponse>("send_http_request", {
     input: {
       method: draft.method,
-      url: draft.url.trim(),
-      headers,
-      query: activePairs(draft.params),
-      body: draft.bodyMode === "none" ? null : draft.body,
+      url: applyEnvVars(draft.url.trim(), vars),
+      headers: applyEnvToEntries(headers, vars),
+      query: applyEnvToEntries(activePairs(draft.params), vars),
+      body: draft.bodyMode === "none" ? null : applyEnvVars(draft.body, vars),
     },
   });
 

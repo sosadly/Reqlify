@@ -38,7 +38,7 @@ export function Section({
       >
         {open && (
           <span
-            className={`absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r ${accentClass}`}
+            className={`absolute left-0 top-1/2 h-5 w-0.75 -translate-y-1/2 rounded-r ${accentClass}`}
           />
         )}
         <span className="text-stone-400">

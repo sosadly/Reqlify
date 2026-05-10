@@ -1,9 +1,11 @@
-import { Braces, Check, Copy, FileCode2, ListFilter, Lock, Terminal } from "lucide-react";
+import { Bookmark, Braces, Check, Copy, FileCode2, ListFilter, Lock, Terminal } from "lucide-react";
 import { useState } from "react";
 
 import { Section } from "../../components/ui/Section";
 import { exportAsCurl } from "../../lib/curlExporter";
+import { SaveToCollectionModal } from "../collections/SaveToCollectionModal";
 import { useTabsStore } from "../../store/tabsStore";
+import { useEnvStore } from "../../store/envStore";
 import type { RequestDraft } from "../../types/http";
 import type { RequestTab } from "../../types/tabs";
 import { AuthEditor } from "./AuthEditor";
@@ -27,12 +29,19 @@ export function RequestPanel({ tab }: RequestPanelProps) {
   const send = useSendRequest();
   const { draft } = tab;
 
+  const activeEnvName = useEnvStore((s) => {
+    const active = s.sets.find((e) => e.id === s.activeId);
+    return active?.name ?? null;
+  });
+
   const [showImport, setShowImport] = useState(false);
   const [curlCopied, setCurlCopied] = useState(false);
+  const [showSave, setShowSave] = useState(false);
 
   const paramCount = activeCount(draft.params);
   const headerCount = activeCount(draft.headers);
   const hasAuth = draft.auth.mode !== "none";
+  const hasUrl = draft.url.trim() !== "";
 
   const copyAsCurl = async () => {
     try {
@@ -50,7 +59,7 @@ export function RequestPanel({ tab }: RequestPanelProps) {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      {/* cURL toolbar */}
+      {/* Toolbar row */}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -63,7 +72,7 @@ export function RequestPanel({ tab }: RequestPanelProps) {
         <button
           type="button"
           onClick={copyAsCurl}
-          disabled={draft.url.trim() === ""}
+          disabled={!hasUrl}
           className="inline-flex items-center gap-1.5 rounded-md border border-stone-800 bg-stone-900/40 px-2.5 py-1.5 text-xs text-stone-400 transition-colors hover:border-stone-700 hover:text-stone-200 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {curlCopied ? (
@@ -78,6 +87,25 @@ export function RequestPanel({ tab }: RequestPanelProps) {
             </>
           )}
         </button>
+
+        {/* Save to collection — visually distinct */}
+        <button
+          type="button"
+          onClick={() => setShowSave(true)}
+          disabled={!hasUrl}
+          className="inline-flex items-center gap-1.5 rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-300 transition-colors hover:bg-fuchsia-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Bookmark size={13} />
+          Save
+        </button>
+
+        {/* Active env badge */}
+        {activeEnvName && (
+          <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-stone-800/80 px-2 py-1 text-[10px] text-stone-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400" />
+            {activeEnvName}
+          </span>
+        )}
       </div>
 
       <UrlBar
@@ -161,6 +189,14 @@ export function RequestPanel({ tab }: RequestPanelProps) {
         <CurlImportModal
           onImport={handleImport}
           onClose={() => setShowImport(false)}
+        />
+      )}
+
+      {showSave && (
+        <SaveToCollectionModal
+          draft={draft}
+          initialName={tab.title !== "New Request" ? tab.title : undefined}
+          onClose={() => setShowSave(false)}
         />
       )}
     </div>
