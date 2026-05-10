@@ -1,8 +1,8 @@
-import { History, Info } from "lucide-react";
+import { FlaskConical, FolderOpen, History, Info } from "lucide-react";
 
 import { IconButton } from "../ui/IconButton";
 
-export type ActivityKey = "history" | "about";
+export type ActivityKey = "history" | "collections" | "env" | "about";
 
 interface ActivityRailProps {
   active: ActivityKey | null;
@@ -17,6 +17,8 @@ interface Item {
 
 const ITEMS: Item[] = [
   { key: "history", label: "History", icon: History },
+  { key: "collections", label: "Collections", icon: FolderOpen },
+  { key: "env", label: "Environments", icon: FlaskConical },
   { key: "about", label: "About", icon: Info },
 ];
 
